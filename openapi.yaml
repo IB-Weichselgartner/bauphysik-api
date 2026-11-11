@@ -1,0 +1,563 @@
+openapi: 3.1.0
+info:
+  title: bauphysik.net API
+  version: 0.1.0
+  summary: Read access to bauphysik.net projects, calculations and exports.
+  description: |
+    The bauphysik.net API gives read access to the projects and calculations of
+    a bauphysik.net account. It returns the stored input and result data of
+    each calculation and creates project exports as JSON or as a ZIP archive
+    with PDF reports.
+
+    **Authentication:** Every request needs an API token in the
+    `Authorization: Bearer <token>` header. Tokens are created in the
+    bauphysik.net user profile and require an active Pro or administrator
+    account. The token is shown only once when it is created.
+
+    **Access:** A token sees the same projects as its account: the account's own
+    projects and, with team features enabled, the projects of Pro members of the
+    same team.
+
+    **Errors:** Error responses are JSON objects with an `error` field. Some
+    messages are in German.
+
+    **Rate limits:** see the `RateLimited` response. Exports additionally consume
+    compute units from an hourly budget, see `POST /api/project/{project_uuid}/export`.
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: bauphysik.net
+    url: https://bauphysik.net
+servers:
+  - url: https://bauphysik.net
+security:
+  - bearerAuth: []
+tags:
+  - name: Projects
+  - name: Calculations
+  - name: Exports
+paths:
+  /api/projects:
+    get:
+      tags: [Projects]
+      operationId: listProjects
+      summary: List the projects accessible to the token
+      description: Projects are sorted by name.
+      responses:
+        "200":
+          description: Accessible projects.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectList"
+              example:
+                projects:
+                  - uuid: 3f1c9a52-7d1e-4f0b-9c55-2a8e0d6b4c11
+                    name: Einfamilienhaus Musterstraße 1
+                    project_id: 4812
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/{project_uuid}/:
+    get:
+      tags: [Calculations]
+      operationId: listCalculations
+      summary: List the calculation names of a project
+      description: |
+        Returns the short calculation names, newest first. Use a name from this
+        list with `GET /api/{project_uuid}/{calc_name}`.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+      responses:
+        "200":
+          description: Calculation names of the project.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationNameList"
+              example:
+                project_uuid: 3f1c9a52-7d1e-4f0b-9c55-2a8e0d6b4c11
+                calculation_names:
+                  - Außenwand Bestand
+                  - Dach Sanierung
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ProjectNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/{project_uuid}/{calc_name}:
+    get:
+      tags: [Calculations]
+      operationId: getCalculation
+      summary: Get input and result data of one calculation
+      description: |
+        Returns the stored input and result data of the newest calculation with
+        this name in the project. The structure of `input_data` and
+        `result_data` depends on the calculation module (`module_name`).
+
+        Calculation names can be renamed by users. Store `calc_uuid` if you need
+        a stable reference and resolve it again through the name list.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+        - name: calc_name
+          in: path
+          required: true
+          description: |
+            Short calculation name from `listCalculations`. Percent-encode the
+            name as one path segment, including `/` as `%2F`.
+          schema:
+            type: string
+          example: Außenwand Bestand
+      responses:
+        "200":
+          description: The calculation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Calculation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Project not found, no permission, or no calculation with this name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Calculation not found in this project
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/project/{project_uuid}/export-json:
+    get:
+      tags: [Exports]
+      operationId: exportProjectJson
+      summary: Export all calculations of a small project as JSON
+      description: |
+        Runs every calculation of the project again and returns the results in
+        one JSON document. Synchronous, therefore only for small projects
+        (currently up to 25 compute units). Larger projects receive `409`; use
+        `POST /api/project/{project_uuid}/export?format=json` instead. The run
+        counts against the hourly export budget.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+      responses:
+        "200":
+          description: The project export.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectExport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ProjectNotFoundOrEmpty"
+        "409":
+          $ref: "#/components/responses/TooLargeForSync"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/project/{project_uuid}/export-pdf:
+    get:
+      tags: [Exports]
+      operationId: exportProjectZip
+      summary: Export a small project as ZIP with PDF reports
+      description: |
+        Synchronous ZIP export for small projects, same limits as
+        `export-json`. Larger projects receive `409`; use
+        `POST /api/project/{project_uuid}/export` instead. The ZIP layout is
+        described in the `ExportArchive` schema.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+      responses:
+        "200":
+          description: ZIP archive.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: attachment; filename="Einfamilienhaus_export.zip"
+          content:
+            application/zip:
+              schema:
+                $ref: "#/components/schemas/ExportArchive"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ProjectNotFoundOrEmpty"
+        "409":
+          $ref: "#/components/responses/TooLargeForSync"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/project/{project_uuid}/export:
+    post:
+      tags: [Exports]
+      operationId: startProjectExport
+      summary: Start a background export
+      description: |
+        Queues an export of the whole project and returns `202` with the job.
+        Poll `status_url` until `status` is `completed`, then fetch
+        `download_url` once. The file is deleted after the first download or at
+        the end of the day (Europe/Berlin), but is kept for at least 60 minutes.
+
+        If an export of the same project and format is already queued or
+        running, that job is returned with `created: false`.
+
+        Limits (current values, subject to change):
+
+        - one active background export per account,
+        - 1500 compute units per account and hour, shared with the synchronous
+          exports,
+        - at most 1000 compute units per project.
+
+        Each calculation costs at least one compute unit.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+        - name: format
+          in: query
+          required: false
+          description: "`zip` (default) for the ZIP archive, `json` for the `export-json` document."
+          schema:
+            type: string
+            enum: [zip, json]
+            default: zip
+      responses:
+        "202":
+          description: Export job queued, or the already active job.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ExportJob"
+                  - type: object
+                    required: [created]
+                    properties:
+                      created:
+                        type: boolean
+                        description: "`false` if an active job for this project and format was returned."
+        "400":
+          description: Unknown export format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ProjectNotFoundOrEmpty"
+        "422":
+          description: Project exceeds the maximum export size.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: |
+            Request rate limit (see `RateLimited`), hourly export budget used
+            up, or another background export still running.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/project/{project_uuid}/export/{job_id}:
+    get:
+      tags: [Exports]
+      operationId: getExportJob
+      summary: Get the status of a background export
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+        - $ref: "#/components/parameters/JobId"
+      responses:
+        "200":
+          description: Export job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportJob"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/JobNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/project/{project_uuid}/export/{job_id}/download:
+    get:
+      tags: [Exports]
+      operationId: downloadExport
+      summary: Download a finished background export
+      description: |
+        Returns the ZIP archive (`format=zip`) or the JSON document
+        (`format=json`). The file is deleted after this download.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+        - $ref: "#/components/parameters/JobId"
+      responses:
+        "200":
+          description: The export file.
+          content:
+            application/zip:
+              schema:
+                $ref: "#/components/schemas/ExportArchive"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectExport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/JobNotFound"
+        "409":
+          description: Export not ready, already downloaded or expired.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Error"
+                  - type: object
+                    properties:
+                      status:
+                        $ref: "#/components/schemas/ExportJobStatus"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API token from the bauphysik.net user profile (Pro or administrator account).
+
+  parameters:
+    ProjectUuid:
+      name: project_uuid
+      in: path
+      required: true
+      description: Project UUID from `listProjects`.
+      schema:
+        type: string
+      example: 3f1c9a52-7d1e-4f0b-9c55-2a8e0d6b4c11
+    JobId:
+      name: job_id
+      in: path
+      required: true
+      description: "`id` of the export job."
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Missing, invalid or revoked token, or the account has no Pro access.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            missing:
+              value:
+                error: Missing Bearer token
+            invalid:
+              value:
+                error: Invalid or revoked token
+    RateLimited:
+      description: |
+        Too many requests. Current limits: 120 requests per minute and 3000 per
+        hour per account; 20 failed authentication attempts per minute and 200
+        per hour per IP address. Wait for the number of seconds in
+        `Retry-After`.
+      headers:
+        Retry-After:
+          description: Seconds until the next request is allowed.
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: Too many requests (120/60s). Retry in about 12s.
+    ProjectNotFound:
+      description: Project does not exist or the token has no access to it.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: Project not found or no permission
+    ProjectNotFoundOrEmpty:
+      description: Project does not exist, the token has no access to it, or no calculations are linked to it.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    JobNotFound:
+      description: Project or export job not found for this account.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: Export job not found
+    TooLargeForSync:
+      description: Project is too large for a synchronous export. Use the background export.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    ProjectList:
+      type: object
+      required: [projects]
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectSummary"
+
+    ProjectSummary:
+      type: object
+      required: [uuid, name, project_id]
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        project_id:
+          type: integer
+
+    CalculationNameList:
+      type: object
+      required: [project_uuid, calculation_names]
+      properties:
+        project_uuid:
+          type: string
+        calculation_names:
+          type: array
+          items:
+            type: string
+
+    Calculation:
+      type: object
+      required: [project_uuid, calc_uuid, module_name, calc_name, calc_name_full, created_at, input_data, result_data]
+      properties:
+        project_uuid:
+          type: string
+        calc_uuid:
+          type: string
+          description: Stable ID of the calculation. Does not change when the calculation is renamed.
+        module_name:
+          type: string
+          description: Calculation module, for example `uwert_glaser_din4108-3`.
+        calc_name:
+          type: string
+          description: Short name as requested.
+        calc_name_full:
+          type: string
+          description: Full stored name, may carry a module prefix.
+        created_at:
+          type: string
+          format: date-time
+        input_data:
+          description: Module-specific input data.
+        result_data:
+          description: Module-specific result data, `null` if no result is stored.
+
+    ProjectExport:
+      type: object
+      required: [project_name, project_id, project_uuid, export_date, calculations]
+      properties:
+        project_name:
+          type: string
+        project_id:
+          type: integer
+        project_uuid:
+          type: string
+        export_date:
+          type: string
+          format: date-time
+        calculations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportedCalculation"
+
+    ExportedCalculation:
+      type: object
+      required: [module_name, calc_name, calc_id, input, output]
+      properties:
+        module_name:
+          type: string
+        calc_name:
+          type: string
+        calc_id:
+          type: integer
+        input:
+          description: Module-specific input data.
+        output:
+          description: Module-specific result of the new run.
+        error:
+          type: string
+          description: Present if the calculation failed during the export.
+
+    ExportJobStatus:
+      type: string
+      enum: [queued, running, completed, failed, downloaded, expired]
+
+    ExportJob:
+      type: object
+      required: [id, status, status_url, download_url]
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/ExportJobStatus"
+        message:
+          type: [string, "null"]
+          description: Progress or error message, in German.
+        done:
+          type: [integer, "null"]
+          description: Calculations processed so far.
+        total:
+          type: [integer, "null"]
+          description: Calculations in the export.
+        cost_units:
+          type: [integer, "null"]
+        format:
+          type: string
+          enum: [zip, json]
+        file_name:
+          type: [string, "null"]
+        expires_at:
+          type: [string, "null"]
+          format: date-time
+        status_url:
+          type: string
+          description: Relative URL of this job.
+        download_url:
+          type: [string, "null"]
+          description: Relative download URL, set only while `status` is `completed`.
+
+    ExportArchive:
+      type: string
+      contentMediaType: application/zip
+      description: |
+        ZIP archive with one folder named after the project:
+
+        - `json/<name>.json`: input and output of each calculation,
+        - `pdf/<name>.pdf`: PDF report of each calculation,
+        - `errors/<name>.txt`: calculations that failed,
+        - `pdf_skipped/<name>.txt`: modules without a PDF report,
+        - `pdf_errors/<name>.txt`: PDF reports that could not be created.
