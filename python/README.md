@@ -10,8 +10,11 @@ Die vollständige Beschreibung der Schnittstelle steht in
 ## Installation
 
 ```bash
-pip install bauphysik-api
+pip install "bauphysik-api @ git+https://github.com/IB-Weichselgartner/bauphysik-api#subdirectory=python"
 ```
+
+Für reproduzierbare Installationen einen Commit oder ein Tag anhängen, zum Beispiel
+`...bauphysik-api@<commit>#subdirectory=python`.
 
 Benötigt Python 3.10 oder neuer.
 

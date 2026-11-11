@@ -11,7 +11,7 @@ Feuchteschutz- oder Wärmebrückenberechnungen in eigene Abläufe zu übernehmen
 |---|---|
 | OpenAPI-Spezifikation | [`openapi.yaml`](openapi.yaml) |
 | Einstieg mit curl-Beispielen | [`docs/einstieg.md`](docs/einstieg.md) |
-| Python-Client | [`python/`](python/), auf PyPI als `bauphysik-api` |
+| Python-Client | [`python/`](python/) |
 
 ## Zugang
 

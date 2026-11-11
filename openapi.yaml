@@ -510,7 +510,10 @@ components:
           description: Module-specific result of the new run.
         error:
           type: string
-          description: Present if the calculation failed during the export.
+          description: |
+            Present if the calculation failed during the export. Contains a
+            German hint with the calculation ID, not the technical error. Run
+            the calculation in the bauphysik.net web interface to see the error.
 
     ExportJobStatus:
       type: string
