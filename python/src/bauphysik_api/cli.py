@@ -165,6 +165,10 @@ def cmd_calc_execute(client: BauphysikClient, args) -> Any:
     return client.execute_module(args.module, **_input_kwargs(args, args.module))
 
 
+def cmd_calc_rerun(client: BauphysikClient, args) -> Any:
+    return client.rerun_calculation(args.calc, save=args.save)
+
+
 def cmd_calc_create(client: BauphysikClient, args) -> Any:
     return client.create_calculation(args.project, args.module, args.name, **_input_kwargs(args, args.module))
 
@@ -248,6 +252,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = command(calc, "execute", cmd_calc_execute, "Auf dem Server rechnen, ohne zu speichern.")
     p.add_argument("module")
     with_input(p)
+    p = command(calc, "rerun", cmd_calc_rerun,
+                "Gespeicherte Berechnung mit ihren gespeicherten Eingaben neu rechnen, mit --save das Ergebnis speichern.")
+    p.add_argument("calc", help="calc_uuid")
+    p.add_argument("--save", action="store_true", help="Ergebnis in der Berechnung speichern")
     p = command(calc, "create", cmd_calc_create,
                 "Berechnung im Projekt anlegen. Überschreibt nie, ein vorhandener Name ergibt HTTP 409.")
     p.add_argument("project", help="project_uuid")

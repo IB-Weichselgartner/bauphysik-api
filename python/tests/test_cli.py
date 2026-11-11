@@ -158,6 +158,18 @@ def test_update_validates_against_the_stored_module(tmp_path, capsys):
     assert "unbekanntes_feld" in json.dumps(err, ensure_ascii=False)
 
 
+def test_rerun_with_save(capsys):
+    def handler(request):
+        assert request.method == "POST" and request.url.path == "/api/calculations/c-1/execute"
+        assert request.url.params["save"] == "1"
+        return httpx.Response(200, json={"calc_uuid": "c-1", "calc_name": "A", "module_name": "lk_din1946-6",
+                                         "saved_result": True, "result_data": {"q": 1}})
+
+    code, out, _err, _calls = run(["calc", "rerun", "c-1", "--save"], handler, capsys)
+
+    assert code == 0 and out["saved_result"] is True
+
+
 def test_export_refuses_to_overwrite(tmp_path, capsys):
     target = tmp_path / "export.zip"
     target.write_bytes(b"alt")

@@ -163,6 +163,11 @@ class BauphysikClient:
             "POST", f"api/modules/{_path(module_name)}/execute", json=_input_body(input_data, simple_data)
         )
 
+    def rerun_calculation(self, calc_uuid: str, *, save: bool = False) -> JsonObject:
+        """Recalculate a stored calculation with its stored input; ``save=True`` stores the result."""
+        path = f"api/calculations/{_path(calc_uuid)}/execute" + ("?save=1" if save else "")
+        return self._request_json("POST", path)
+
     def create_calculation(
         self,
         project_uuid: str,

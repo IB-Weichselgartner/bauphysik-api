@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: bauphysik.net API
-  version: 0.2.0
+  version: 0.2.1
   summary: Read access to bauphysik.net projects, calculations and exports.
   description: |
     The bauphysik.net API gives read access to the projects and calculations of
@@ -198,6 +198,52 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/CalculationLimit"
+        "404":
+          $ref: "#/components/responses/CalculationNotFound"
+        "422":
+          $ref: "#/components/responses/InvalidInput"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/calculations/{calc_uuid}/execute:
+    post:
+      tags: [Calculations]
+      operationId: rerunCalculation
+      summary: Recalculate a stored calculation
+      description: |
+        Runs the calculation again with its stored input, for example after
+        linked calculations changed. With `save=1` the result is stored.
+        Only for modules from `GET /api/modules`. Books the compute budget.
+      parameters:
+        - $ref: "#/components/parameters/CalcUuid"
+        - name: save
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["0", "1"]
+            default: "0"
+      responses:
+        "200":
+          description: Result of the calculation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [calc_uuid, calc_name, module_name, saved_result, result_data]
+                properties:
+                  calc_uuid:
+                    type: string
+                  calc_name:
+                    type: string
+                  module_name:
+                    type: string
+                  saved_result:
+                    type: boolean
+                  result_data:
+                    description: Module-specific result.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/CalculationNotFound"
         "422":

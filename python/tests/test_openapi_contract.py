@@ -44,6 +44,9 @@ def _handler(calls):
                                              "module_name": "uwert_glaser_din4108-3", "simple_data": {}})
         if path == "/api/modules":
             return httpx.Response(200, json={"modules": [{"module_name": "fl_din277", "name": "DIN 277"}]})
+        if request.method == "POST" and path.startswith("/api/calculations/") and path.endswith("/execute"):
+            return httpx.Response(200, json={"calc_uuid": "c-1", "calc_name": "A", "module_name": "fl_din277",
+                                             "saved_result": True, "result_data": {}})
         if request.method == "POST" and path.endswith("/execute"):
             return httpx.Response(200, json={"module_name": "fl_din277", "result_data": {}})
         if request.method == "POST" and path.endswith("/calculations"):
@@ -88,6 +91,7 @@ class OpenAPIContractTests(unittest.TestCase):
             client.execute_module("uwert_glaser_din4108-3", simple_data={"layers": []})
             client.create_calculation("p-1", "fl_din277", "A", input_data={"rooms": []})
             client.update_calculation("c-1", input_data={"rooms": []})
+            client.rerun_calculation("c-1", save=True)
             client.get_calculation("p-1", "a/b")
             client.get_calculations_by_uuid("p-1", ["c-1"])
             client.export_project("p-1")

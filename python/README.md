@@ -48,6 +48,7 @@ bauphysik schema uwert_glaser_din4108-3 --simple   # Eingabeschema, ohne Netz
 bauphysik calc execute uwert_glaser_din4108-3 --input wand.json --simple
 bauphysik calc create <project_uuid> uwert_glaser_din4108-3 "Außenwand" --input wand.json --simple
 bauphysik calc update <calc_uuid> --input wand.json --simple
+bauphysik calc rerun <calc_uuid> --save              # gespeicherte Eingaben neu rechnen
 bauphysik export <project_uuid> --out export.zip
 ```
 
@@ -120,6 +121,7 @@ python examples/project_export.py
 | `list_api_modules()` | `GET /api/modules` | Module, die über die API gerechnet, angelegt und geändert werden können |
 | `execute_module(module, input_data=… \| simple_data=…)` | `POST /api/modules/{module}/execute` | Ergebnis, nichts wird gespeichert |
 | `create_calculation(project_uuid, module, calc_name, input_data=… \| simple_data=…)` | `POST /api/projects/{project_uuid}/calculations` | neue Berechnung; ein vorhandener Name ergibt `409` mit `existing_calc_uuid` |
+| `rerun_calculation(calc_uuid, save=False)` | `POST /api/calculations/{calc_uuid}/execute` | gespeicherte Berechnung neu rechnen, mit `save=True` Ergebnis speichern |
 | `update_calculation(calc_uuid, input_data=… \| simple_data=…)` | `PUT /api/calculations/{calc_uuid}` | geänderte Berechnung, der vorherige Stand bleibt als eigene Berechnung (`backup_calc_uuid`) |
 
 `simple_data` ist der vereinfachte Schichtaufbau für `uwert_glaser_din4108-3`. Die
