@@ -73,9 +73,22 @@ python examples/project_export.py
 | Methode | Endpunkt | Rückgabe |
 |---|---|---|
 | `list_projects()` | `GET /api/projects` | Liste von Dicts mit `uuid`, `name`, `project_id` |
-| `list_calculations(project_uuid)` | `GET /api/{project_uuid}/` | `ProjectCalculationList` |
+| `list_calculations(project_uuid, module=None)` | `GET /api/{project_uuid}/` | `ProjectCalculationList` mit `calculations` (`calc_uuid`, `calc_name`, `module_name`, `created_at`) |
+| `get_calculation_by_uuid(calc_uuid)` | `GET /api/calculations/{calc_uuid}` | `Calculation` |
 | `get_calculation(project_uuid, calc_name)` | `GET /api/{project_uuid}/{calc_name}` | `Calculation` |
-| `get_calculations_by_uuid(project_uuid, calc_uuids)` | über die beiden vorigen | `dict[calc_uuid, Calculation]` |
+| `get_calculations_by_uuid(project_uuid, calc_uuids)` | über die vorigen, auch mit älteren Servern | `dict[calc_uuid, Calculation]` |
+| `get_din4108_3_layers(calc_uuid)` | `GET /api/calculations/{calc_uuid}/din4108-3` | `dict` mit `simple_data` |
+| `search_materials(query, manufacturer=False)` | `GET /api/materials` | Liste von Materialien, mit `manufacturer=True` Werte aus Herstellerdatenblättern |
+| `search_calculations(query, module=None, project_uuid=None)` | `GET /api/search` | Liste passender Berechnungen |
+| `list_api_modules()` | `GET /api/modules` | Module, die über die API gerechnet, angelegt und geändert werden können |
+| `execute_module(module, input_data=… \| simple_data=…)` | `POST /api/modules/{module}/execute` | Ergebnis, nichts wird gespeichert |
+| `create_calculation(project_uuid, module, calc_name, input_data=… \| simple_data=…)` | `POST /api/projects/{project_uuid}/calculations` | neue Berechnung; ein vorhandener Name ergibt `409` mit `existing_calc_uuid` |
+| `update_calculation(calc_uuid, input_data=… \| simple_data=…)` | `PUT /api/calculations/{calc_uuid}` | geänderte Berechnung, der vorherige Stand bleibt als eigene Berechnung (`backup_calc_uuid`) |
+
+`simple_data` ist der vereinfachte Schichtaufbau für `uwert_glaser_din4108-3`. Die
+Eingabeschemata je Modul stehen in
+[`schemas/calculation-inputs.json`](https://github.com/IB-Weichselgartner/bauphysik-api/blob/main/schemas/calculation-inputs.json).
+Rechnen, Anlegen und Ändern zählen in das Rechenbudget des Kontos.
 | `export_project(project_uuid)` | `export-json`, bei Bedarf Hintergrund-Export | `ProjectExport` |
 | `export_project_bundle(project_uuid)` | Hintergrund-Export als ZIP | `bytes` |
 | `export_project_pdf_zip(project_uuid)` | `GET .../export-pdf`, nur kleine Projekte | `bytes` |

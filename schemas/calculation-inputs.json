@@ -1,0 +1,2068 @@
+{
+  "$comment": "Erzeugt aus den Eingabemodellen von bauphysik.net, nicht von Hand ändern.",
+  "x-modules": {
+    "datenerfassung": {
+      "input_data": "Input_datenerfassung"
+    },
+    "fl_din277": {
+      "input_data": "Input_fl_din277"
+    },
+    "lk_din16798": {
+      "input_data": "Input_lk_din16798"
+    },
+    "lk_din1946-6": {
+      "input_data": "Input_lk_din1946_6"
+    },
+    "pv_simulation": {
+      "input_data": "Input_pv_simulation"
+    },
+    "sws_din4108-2": {
+      "input_data": "Input_sws_din4108_2"
+    },
+    "uw_din_en_iso_10077-1": {
+      "input_data": "Input_uw_din_en_iso_10077_1"
+    },
+    "uwert_glaser_din4108-3": {
+      "input_data": "Input_uwert_glaser_din4108_3",
+      "simple_data": "SimpleDin4108_3"
+    }
+  },
+  "components": {
+    "schemas": {
+      "AldRoom": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "flaeche_m2": {
+            "exclusiveMinimum": 0,
+            "title": "Flaeche M2",
+            "type": "number"
+          },
+          "ald_positionen": {
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Ald Positionen",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "flaeche_m2",
+          "ald_positionen"
+        ],
+        "title": "AldRoom",
+        "type": "object"
+      },
+      "AssemblyLayer": {
+        "additionalProperties": false,
+        "properties": {
+          "layer_name": {
+            "minLength": 1,
+            "title": "Layer Name",
+            "type": "string"
+          },
+          "thickness": {
+            "description": "Layer thickness in m.",
+            "exclusiveMinimum": 0,
+            "title": "Thickness",
+            "type": "number"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/LayerComponent"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Components",
+            "type": "array"
+          }
+        },
+        "required": [
+          "layer_name",
+          "thickness",
+          "components"
+        ],
+        "title": "AssemblyLayer",
+        "type": "object"
+      },
+      "Din277Room": {
+        "additionalProperties": false,
+        "properties": {
+          "room_id": {
+            "default": "",
+            "description": "Stable room id, for example eg_wohnen.",
+            "title": "Room Id",
+            "type": "string"
+          },
+          "floor": {
+            "enum": [
+              "UG",
+              "EG",
+              "OG",
+              "DG",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "title": "Floor",
+            "type": "string"
+          },
+          "room_name": {
+            "minLength": 1,
+            "title": "Room Name",
+            "type": "string"
+          },
+          "ngf": {
+            "description": "Net floor area in m².",
+            "minimum": 0,
+            "title": "Ngf",
+            "type": "number"
+          },
+          "ngf_formel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional area formula as entered, for example '4,5 * 3 + 2'. ngf is computed from it.",
+            "title": "Ngf Formel"
+          },
+          "temp": {
+            "enum": [
+              "warm",
+              "kalt"
+            ],
+            "title": "Temp",
+            "type": "string"
+          },
+          "art": {
+            "enum": [
+              "nutzflaeche",
+              "technikflaeche",
+              "verkehrsflaeche"
+            ],
+            "title": "Art",
+            "type": "string"
+          }
+        },
+        "required": [
+          "floor",
+          "room_name",
+          "ngf",
+          "temp",
+          "art"
+        ],
+        "title": "Din277Room",
+        "type": "object"
+      },
+      "Input_datenerfassung": {
+        "additionalProperties": false,
+        "properties": {
+          "besuchsdatum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Besuchsdatum"
+          },
+          "baujahr_haus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Baujahr Haus"
+          },
+          "anzahl_wohneinheiten": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Anzahl Wohneinheiten"
+          },
+          "typ_gebaeude": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Typ Gebaeude"
+          },
+          "anzahl_stockwerke": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Anzahl Stockwerke"
+          },
+          "anzahl_bewohner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Anzahl Bewohner"
+          },
+          "notizen_allgemein": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notizen Allgemein"
+          },
+          "verlauf_thermische_huelle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Verlauf Thermische Huelle"
+          },
+          "aussenwand_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Aussenwand Aufbau"
+          },
+          "fenster_beschreibung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fenster Beschreibung"
+          },
+          "dach_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dach Aufbau"
+          },
+          "ogd_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ogd Aufbau"
+          },
+          "kellerwaende_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kellerwaende Aufbau"
+          },
+          "kellerdecke_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kellerdecke Aufbau"
+          },
+          "bodenplatte_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Bodenplatte Aufbau"
+          },
+          "dff_beschreibung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dff Beschreibung"
+          },
+          "tuer_beschreibung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tuer Beschreibung"
+          },
+          "anbau_garage_aufbau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Anbau Garage Aufbau"
+          },
+          "vorhandene_waermenetze": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Vorhandene Waermenetze"
+          },
+          "kommunale_waermeplanung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Kommunale Waermeplanung"
+          },
+          "heiz_baujahr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Baujahr"
+          },
+          "heiz_aufstellort": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Aufstellort"
+          },
+          "heiz_zentral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Zentral"
+          },
+          "heiz_art": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Art"
+          },
+          "heiz_energietraeger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Energietraeger"
+          },
+          "heiz_verteilung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Verteilung"
+          },
+          "heiz_vorlauf_temp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Vorlauf Temp"
+          },
+          "heiz_leitungsfuehrung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Leitungsfuehrung"
+          },
+          "heiz_rohrdaemmung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Rohrdaemmung"
+          },
+          "heiz_armaturendaemmung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Armaturendaemmung"
+          },
+          "heiz_hydraulischer_abgleich": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Hydraulischer Abgleich"
+          },
+          "heiz_pufferspeicher_vol_l": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Pufferspeicher Vol L"
+          },
+          "heiz_regelung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Regelung"
+          },
+          "heiz_notizen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Heiz Notizen"
+          },
+          "ww_bereitstellung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ww Bereitstellung"
+          },
+          "ww_zirkulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ww Zirkulation"
+          },
+          "ww_speicher_vol_l": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ww Speicher Vol L"
+          },
+          "ww_speicher_baujahr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ww Speicher Baujahr"
+          },
+          "ww_notizen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ww Notizen"
+          },
+          "st_vorhanden": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "St Vorhanden"
+          },
+          "st_art": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "St Art"
+          },
+          "st_flaeche_m2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "St Flaeche M2"
+          },
+          "st_baujahr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "St Baujahr"
+          },
+          "st_notizen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "St Notizen"
+          },
+          "pv_vorhanden": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pv Vorhanden"
+          },
+          "pv_leistung_kwp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pv Leistung Kwp"
+          },
+          "pv_baujahr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pv Baujahr"
+          },
+          "pv_speicher_kwh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pv Speicher Kwh"
+          },
+          "pv_notizen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Pv Notizen"
+          },
+          "lueft_system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lueft System"
+          },
+          "lueft_wrg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lueft Wrg"
+          },
+          "lueft_zentral_dezentral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lueft Zentral Dezentral"
+          },
+          "lueft_notizen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lueft Notizen"
+          },
+          "klima_vorhanden": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Klima Vorhanden"
+          },
+          "klima_notizen": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Klima Notizen"
+          }
+        },
+        "title": "Input_datenerfassung",
+        "type": "object"
+      },
+      "Input_fl_din277": {
+        "additionalProperties": false,
+        "properties": {
+          "bgf": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Gross floor area in m². Optional — omit instead of sending a placeholder.",
+            "title": "Bgf"
+          },
+          "bgf_formel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional formula for bgf, for example '12 * 10,5'. bgf is computed from it.",
+            "title": "Bgf Formel"
+          },
+          "raumhoehe": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Average room height in m. Optional — omit instead of sending a placeholder.",
+            "title": "Raumhoehe"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/Din277Room"
+            },
+            "title": "Rooms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rooms"
+        ],
+        "title": "Input_fl_din277",
+        "type": "object"
+      },
+      "Input_lk_din16798": {
+        "additionalProperties": false,
+        "properties": {
+          "din277_uuid": {
+            "description": "calc_uuid of the project's fl_din277 calculation. Create it first if none exists; rooms reference its room_id values and take name, floor and area from it.",
+            "minLength": 1,
+            "title": "Din277 Uuid",
+            "type": "string"
+          },
+          "project_name": {
+            "default": "",
+            "title": "Project Name",
+            "type": "string"
+          },
+          "project_address": {
+            "default": "",
+            "title": "Project Address",
+            "type": "string"
+          },
+          "notes": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Notes",
+            "type": "string"
+          },
+          "kategorie": {
+            "default": "III",
+            "enum": [
+              "I",
+              "II",
+              "III",
+              "IV"
+            ],
+            "title": "Kategorie",
+            "type": "string"
+          },
+          "schadstoffklasse": {
+            "default": "schadstoffarm",
+            "enum": [
+              "sehr_schadstoffarm",
+              "schadstoffarm",
+              "nicht_schadstoffarm"
+            ],
+            "title": "Schadstoffklasse",
+            "type": "string"
+          },
+          "lueftungseffektivitaet": {
+            "default": 1.0,
+            "maximum": 2.0,
+            "minimum": 0.1,
+            "title": "Lueftungseffektivitaet",
+            "type": "number"
+          },
+          "standard_raumhoehe": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 1.5,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Room height in m. Omit to take raumhoehe from DIN 277 (fallback 2.80).",
+            "title": "Standard Raumhoehe"
+          },
+          "floor_heights": {
+            "description": "Optional room height per floor; overrides standard_raumhoehe for rooms on that floor.",
+            "items": {
+              "$ref": "#/components/schemas/Lueftungskonzept16798FloorHeight"
+            },
+            "title": "Floor Heights",
+            "type": "array"
+          },
+          "hoehe_nn": {
+            "default": 448.0,
+            "description": "Site altitude above sea level in m.",
+            "title": "Hoehe Nn",
+            "type": "number"
+          },
+          "rel_feuchte_soll": {
+            "default": 50.0,
+            "description": "Target indoor relative humidity in %.",
+            "title": "Rel Feuchte Soll",
+            "type": "number"
+          },
+          "mittlere_aussentemp": {
+            "default": 7.66,
+            "description": "Mean outdoor temperature at the site in °C.",
+            "title": "Mittlere Aussentemp",
+            "type": "number"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/Lueftungskonzept16798Room"
+            },
+            "minItems": 1,
+            "title": "Rooms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "din277_uuid",
+          "rooms"
+        ],
+        "title": "Input_lk_din16798",
+        "type": "object"
+      },
+      "Input_lk_din1946_6": {
+        "additionalProperties": false,
+        "properties": {
+          "windstaerke": {
+            "enum": [
+              "windschwach",
+              "windstark"
+            ],
+            "title": "Windstaerke",
+            "type": "string"
+          },
+          "H_R": {
+            "description": "Average room height in m.",
+            "exclusiveMinimum": 0,
+            "title": "H R",
+            "type": "number"
+          },
+          "A_NE": {
+            "description": "Area of the usage unit in m².",
+            "exclusiveMinimum": 0,
+            "title": "A Ne",
+            "type": "number"
+          },
+          "Belegung": {
+            "enum": [
+              "geringe Belegung",
+              "hohe Belegung"
+            ],
+            "title": "Belegung",
+            "type": "string"
+          },
+          "Waermeschutz": {
+            "enum": [
+              "Wärmeschutz hoch",
+              "Wärmeschutz niedrig"
+            ],
+            "title": "Waermeschutz",
+            "type": "string"
+          },
+          "n_50": {
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "Bestand"
+            ],
+            "title": "N 50",
+            "type": "string"
+          },
+          "NE": {
+            "enum": [
+              "eingeschossige NE",
+              "mehrgeschossige NE"
+            ],
+            "title": "Ne",
+            "type": "string"
+          },
+          "ltm_system": {
+            "default": "keine_massnahme",
+            "enum": [
+              "keine_massnahme",
+              "freie_lueftung",
+              "abluftsystem"
+            ],
+            "title": "Ltm System",
+            "type": "string"
+          },
+          "anlagen_unterdruck_pa": {
+            "anyOf": [
+              {
+                "maximum": 30,
+                "minimum": 1,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Anlagen Unterdruck Pa"
+          },
+          "ald_raeume": {
+            "items": {
+              "$ref": "#/components/schemas/AldRoom"
+            },
+            "title": "Ald Raeume",
+            "type": "array"
+          }
+        },
+        "required": [
+          "windstaerke",
+          "H_R",
+          "A_NE",
+          "Belegung",
+          "Waermeschutz",
+          "n_50",
+          "NE"
+        ],
+        "title": "Input_lk_din1946_6",
+        "type": "object"
+      },
+      "Input_pv_simulation": {
+        "additionalProperties": false,
+        "properties": {
+          "Location": {
+            "$ref": "#/components/schemas/PvLocation"
+          },
+          "batterie": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Batterie",
+            "type": "number"
+          },
+          "verbrauch": {
+            "$ref": "#/components/schemas/PvConsumption"
+          },
+          "kosten": {
+            "minimum": 0,
+            "title": "Kosten",
+            "type": "number"
+          },
+          "kosten_batterie": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Kosten Batterie",
+            "type": "number"
+          },
+          "einspeisung": {
+            "default": 0.077,
+            "minimum": 0,
+            "title": "Einspeisung",
+            "type": "number"
+          },
+          "bezug": {
+            "default": 0.3,
+            "description": "Arbeitspreis Strom ohne Grundpreis [€/kWh]. Bei dynamisch=True stattdessen der Nettoaufschlag auf den Börsenpreis.",
+            "minimum": 0,
+            "title": "Bezug",
+            "type": "number"
+          },
+          "dynamisch": {
+            "default": false,
+            "title": "Dynamisch",
+            "type": "boolean"
+          },
+          "Solarspitzengesetz": {
+            "default": true,
+            "description": "Inbetriebnahme ab 25.02.2025 oder geplant: keine Einspeisevergütung bei negativem Börsenpreis (§ 51 EEG). False für ältere Anlagen.",
+            "title": "Solarspitzengesetz",
+            "type": "boolean"
+          },
+          "pvs": {
+            "items": {
+              "$ref": "#/components/schemas/PvArray"
+            },
+            "minItems": 1,
+            "title": "Pvs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "Location",
+          "verbrauch",
+          "kosten",
+          "pvs"
+        ],
+        "title": "Input_pv_simulation",
+        "type": "object"
+      },
+      "Input_sws_din4108_2": {
+        "additionalProperties": false,
+        "properties": {
+          "din277_uuid": {
+            "default": "",
+            "title": "Din277 Uuid",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes"
+          },
+          "bauart": {
+            "enum": [
+              "MITTEL",
+              "LEICHT",
+              "SCHWER"
+            ],
+            "title": "Bauart",
+            "type": "string"
+          },
+          "klima": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ],
+            "title": "Klima",
+            "type": "string"
+          },
+          "wgb": {
+            "default": true,
+            "title": "Wgb",
+            "type": "boolean"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/SummerRoom"
+            },
+            "title": "Rooms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bauart",
+          "klima",
+          "rooms"
+        ],
+        "title": "Input_sws_din4108_2",
+        "type": "object"
+      },
+      "Input_uw_din_en_iso_10077_1": {
+        "additionalProperties": false,
+        "properties": {
+          "breite": {
+            "default": 1.23,
+            "exclusiveMinimum": 0,
+            "title": "Breite",
+            "type": "number"
+          },
+          "hoehe": {
+            "default": 1.48,
+            "exclusiveMinimum": 0,
+            "title": "Hoehe",
+            "type": "number"
+          },
+          "uf": {
+            "exclusiveMinimum": 0,
+            "title": "Uf",
+            "type": "number"
+          },
+          "ug": {
+            "exclusiveMinimum": 0,
+            "title": "Ug",
+            "type": "number"
+          },
+          "psig": {
+            "title": "Psig",
+            "type": "number"
+          },
+          "profile_breite_unten": {
+            "exclusiveMinimum": 0,
+            "title": "Profile Breite Unten",
+            "type": "number"
+          },
+          "profile_breite_seite": {
+            "exclusiveMinimum": 0,
+            "title": "Profile Breite Seite",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uf",
+          "ug",
+          "psig",
+          "profile_breite_unten",
+          "profile_breite_seite"
+        ],
+        "title": "Input_uw_din_en_iso_10077_1",
+        "type": "object"
+      },
+      "Input_uwert_glaser_din4108_3": {
+        "additionalProperties": false,
+        "properties": {
+          "ziel_u_kategorie": {
+            "enum": [
+              "innenbauteil",
+              "dachflaechen",
+              "ogd",
+              "abseiten",
+              "aussenwand",
+              "kellerdecke",
+              "waende_erdreich",
+              "waende_unbeheizt",
+              "waende_dachraeume",
+              "boden_erdreich",
+              "boden_aussenluft",
+              "gaube"
+            ],
+            "title": "Ziel U Kategorie",
+            "type": "string"
+          },
+          "boundary_condition": {
+            "default": "exterior",
+            "description": "Use interior_heated for an internal component between heated rooms; Glaser is then skipped.",
+            "enum": [
+              "exterior",
+              "interior_heated"
+            ],
+            "title": "Boundary Condition",
+            "type": "string"
+          },
+          "R_si": {
+            "default": 0.13,
+            "enum": [
+              0.1,
+              0.13,
+              0.17
+            ],
+            "title": "R Si",
+            "type": "number"
+          },
+          "R_se": {
+            "default": 0.04,
+            "enum": [
+              0.0,
+              0.04,
+              0.1,
+              0.13
+            ],
+            "title": "R Se",
+            "type": "number"
+          },
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/AssemblyLayer"
+            },
+            "minItems": 1,
+            "title": "Layers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ziel_u_kategorie",
+          "layers"
+        ],
+        "title": "Input_uwert_glaser_din4108_3",
+        "type": "object"
+      },
+      "LayerComponent": {
+        "additionalProperties": false,
+        "properties": {
+          "material": {
+            "$ref": "#/components/schemas/MaterialInput"
+          },
+          "area_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1.0,
+            "title": "Area Fraction"
+          }
+        },
+        "required": [
+          "material"
+        ],
+        "title": "LayerComponent",
+        "type": "object"
+      },
+      "Lueftungskonzept16798FloorHeight": {
+        "additionalProperties": false,
+        "properties": {
+          "floor": {
+            "description": "Floor code as in DIN 277, e.g. EG, OG, DG.",
+            "minLength": 1,
+            "title": "Floor",
+            "type": "string"
+          },
+          "hoehe": {
+            "description": "Clear room height of the floor in m.",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Hoehe",
+            "type": "number"
+          }
+        },
+        "required": [
+          "floor",
+          "hoehe"
+        ],
+        "title": "Lueftungskonzept16798FloorHeight",
+        "type": "object"
+      },
+      "Lueftungskonzept16798Room": {
+        "additionalProperties": false,
+        "properties": {
+          "room_id": {
+            "description": "room_id of a heated room in the linked fl_din277 calculation. Name, floor and area always come from DIN 277; correct them there.",
+            "minLength": 1,
+            "title": "Room Id",
+            "type": "string"
+          },
+          "raumhoehe": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Room height in m. Omit to use the floor height or standard_raumhoehe.",
+            "title": "Raumhoehe"
+          },
+          "volumen": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Room volume in m³. Omit to derive it from area and height.",
+            "title": "Volumen"
+          },
+          "nutzung_typ": {
+            "default": "buero",
+            "enum": [
+              "buero",
+              "beratung",
+              "teamraum",
+              "besprechung",
+              "schalter_sb_lounge",
+              "sanitaer_wc",
+              "kueche_sozialraum",
+              "verkehr_flur",
+              "lager_archiv",
+              "technik_tresor",
+              "tresor",
+              "sonstiges"
+            ],
+            "title": "Nutzung Typ",
+            "type": "string"
+          },
+          "personen": {
+            "anyOf": [
+              {
+                "maximum": 500,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Number of occupants. Omit to use the usage type default.",
+            "title": "Personen"
+          },
+          "hat_fenster": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Operable exterior window. Omit to use the usage type default.",
+            "title": "Hat Fenster"
+          }
+        },
+        "required": [
+          "room_id"
+        ],
+        "title": "Lueftungskonzept16798Room",
+        "type": "object"
+      },
+      "MaterialInput": {
+        "additionalProperties": false,
+        "properties": {
+          "material_source": {
+            "description": "Exact catalog material name or custom.",
+            "minLength": 1,
+            "title": "Material Source",
+            "type": "string"
+          },
+          "lambda_": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lambda"
+          },
+          "mu1": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mu1"
+          },
+          "mu2": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mu2"
+          },
+          "roh": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Roh"
+          },
+          "c": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "C"
+          }
+        },
+        "required": [
+          "material_source"
+        ],
+        "title": "MaterialInput",
+        "type": "object"
+      },
+      "PvArray": {
+        "additionalProperties": false,
+        "properties": {
+          "PV_Modul": {
+            "$ref": "#/components/schemas/PvModule"
+          },
+          "wr_wirkungsgrad": {
+            "default": 0.97,
+            "exclusiveMinimum": 0,
+            "maximum": 1,
+            "title": "Wr Wirkungsgrad",
+            "type": "number"
+          }
+        },
+        "required": [
+          "PV_Modul"
+        ],
+        "title": "PvArray",
+        "type": "object"
+      },
+      "PvConsumption": {
+        "additionalProperties": false,
+        "properties": {
+          "Gefahrene Kilometer": {
+            "minimum": 0,
+            "title": "Gefahrene Kilometer",
+            "type": "integer"
+          },
+          "Fahrprofil": {
+            "default": "pendler",
+            "description": "Wann das Auto zuhause steht: pendler (Mo-Fr 7:00-17:30 unterwegs), homeoffice (Di und Do zuhause), teilzeit (Mo-Fr 7:30-13:00 unterwegs), zuhause (überwiegend zuhause).",
+            "enum": [
+              "pendler",
+              "homeoffice",
+              "teilzeit",
+              "zuhause"
+            ],
+            "title": "Fahrprofil",
+            "type": "string"
+          },
+          "Ueberschussladen": {
+            "default": false,
+            "description": "Wallbox lädt aus PV-Überschuss; sonst ab Ankunft mit 11 kW.",
+            "title": "Ueberschussladen",
+            "type": "boolean"
+          },
+          "Ladezeit Start": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ladezeit Start"
+          },
+          "Ladezeit Ende": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ladezeit Ende"
+          },
+          "Stromverbrauch": {
+            "minimum": 0,
+            "title": "Stromverbrauch",
+            "type": "integer"
+          },
+          "Waermepumpe Verbrauch": {
+            "minimum": 0,
+            "title": "Waermepumpe Verbrauch",
+            "type": "integer"
+          },
+          "Klimageraet Verbrauch": {
+            "minimum": 0,
+            "title": "Klimageraet Verbrauch",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "Gefahrene Kilometer",
+          "Stromverbrauch",
+          "Waermepumpe Verbrauch",
+          "Klimageraet Verbrauch"
+        ],
+        "title": "PvConsumption",
+        "type": "object"
+      },
+      "PvLocation": {
+        "additionalProperties": false,
+        "properties": {
+          "latitude": {
+            "maximum": 90,
+            "minimum": -90,
+            "title": "Latitude",
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": 180,
+            "minimum": -180,
+            "title": "Longitude",
+            "type": "number"
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "PvLocation",
+        "type": "object"
+      },
+      "PvModule": {
+        "additionalProperties": false,
+        "properties": {
+          "modul_leistung": {
+            "minimum": 0,
+            "title": "Modul Leistung",
+            "type": "integer"
+          },
+          "modul_wirkungsgrad": {
+            "default": 0.2,
+            "exclusiveMinimum": 0,
+            "maximum": 1,
+            "title": "Modul Wirkungsgrad",
+            "type": "number"
+          },
+          "ausrichtung": {
+            "maximum": 180,
+            "minimum": -180,
+            "title": "Ausrichtung",
+            "type": "integer"
+          },
+          "neigung": {
+            "maximum": 90,
+            "minimum": 0,
+            "title": "Neigung",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "modul_leistung",
+          "ausrichtung",
+          "neigung"
+        ],
+        "title": "PvModule",
+        "type": "object"
+      },
+      "SimpleAssemblyLayer": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "thickness_m": {
+            "exclusiveMinimum": 0,
+            "title": "Thickness M",
+            "type": "number"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "single",
+                  "parallel"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mode"
+          },
+          "material": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/SimpleCustomMaterial"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Material"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/SimpleLayerComponent"
+            },
+            "maxItems": 2,
+            "title": "Components",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "thickness_m"
+        ],
+        "title": "SimpleAssemblyLayer",
+        "type": "object"
+      },
+      "SimpleCustomMaterial": {
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "const": "custom",
+            "default": "custom",
+            "title": "Source",
+            "type": "string"
+          },
+          "lambda": {
+            "exclusiveMinimum": 0,
+            "title": "Lambda",
+            "type": "number"
+          },
+          "mu1": {
+            "minimum": 0,
+            "title": "Mu1",
+            "type": "number"
+          },
+          "mu2": {
+            "minimum": 0,
+            "title": "Mu2",
+            "type": "number"
+          },
+          "density": {
+            "minimum": 0,
+            "title": "Density",
+            "type": "number"
+          },
+          "specific_heat": {
+            "minimum": 0,
+            "title": "Specific Heat",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lambda",
+          "mu1",
+          "mu2",
+          "density",
+          "specific_heat"
+        ],
+        "title": "SimpleCustomMaterial",
+        "type": "object"
+      },
+      "SimpleDin4108_3": {
+        "additionalProperties": false,
+        "properties": {
+          "calc_name": {
+            "anyOf": [
+              {
+                "maxLength": 150,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Calc Name"
+          },
+          "ziel_u_kategorie": {
+            "enum": [
+              "innenbauteil",
+              "dachflaechen",
+              "ogd",
+              "abseiten",
+              "aussenwand",
+              "kellerdecke",
+              "waende_erdreich",
+              "waende_unbeheizt",
+              "waende_dachraeume",
+              "boden_erdreich",
+              "boden_aussenluft",
+              "gaube"
+            ],
+            "title": "Ziel U Kategorie",
+            "type": "string"
+          },
+          "boundary_condition": {
+            "default": "exterior",
+            "enum": [
+              "exterior",
+              "interior_heated"
+            ],
+            "title": "Boundary Condition",
+            "type": "string"
+          },
+          "r_si": {
+            "default": 0.13,
+            "enum": [
+              0.1,
+              0.13,
+              0.17
+            ],
+            "title": "R Si",
+            "type": "number"
+          },
+          "r_se": {
+            "default": 0.04,
+            "enum": [
+              0.0,
+              0.04,
+              0.1,
+              0.13
+            ],
+            "title": "R Se",
+            "type": "number"
+          },
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/SimpleAssemblyLayer"
+            },
+            "minItems": 1,
+            "title": "Layers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ziel_u_kategorie",
+          "layers"
+        ],
+        "title": "SimpleDin4108_3",
+        "type": "object"
+      },
+      "SimpleLayerComponent": {
+        "additionalProperties": false,
+        "properties": {
+          "material": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "$ref": "#/components/schemas/SimpleCustomMaterial"
+              }
+            ],
+            "title": "Material"
+          },
+          "fraction": {
+            "exclusiveMinimum": 0,
+            "maximum": 1,
+            "title": "Fraction",
+            "type": "number"
+          }
+        },
+        "required": [
+          "material",
+          "fraction"
+        ],
+        "title": "SimpleLayerComponent",
+        "type": "object"
+      },
+      "SummerRoom": {
+        "additionalProperties": false,
+        "properties": {
+          "room_id": {
+            "minLength": 1,
+            "title": "Room Id",
+            "type": "string"
+          },
+          "room_name": {
+            "minLength": 1,
+            "title": "Room Name",
+            "type": "string"
+          },
+          "flaeche": {
+            "minimum": 0,
+            "title": "Flaeche",
+            "type": "number"
+          },
+          "nachtlueftung": {
+            "default": "keine",
+            "enum": [
+              "keine",
+              "erhoeht",
+              "hoch"
+            ],
+            "title": "Nachtlueftung",
+            "type": "string"
+          },
+          "passiv": {
+            "default": false,
+            "title": "Passiv",
+            "type": "boolean"
+          },
+          "windows": {
+            "items": {
+              "$ref": "#/components/schemas/SummerWindow"
+            },
+            "minItems": 1,
+            "title": "Windows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "room_id",
+          "room_name",
+          "flaeche",
+          "windows"
+        ],
+        "title": "SummerRoom",
+        "type": "object"
+      },
+      "SummerWindow": {
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Area"
+          },
+          "area_formula": {
+            "description": "Area or arithmetic area formula.",
+            "minLength": 1,
+            "title": "Area Formula",
+            "type": "string"
+          },
+          "g": {
+            "minimum": 0,
+            "title": "G",
+            "type": "number"
+          },
+          "Fs": {
+            "minimum": 0,
+            "title": "Fs",
+            "type": "number"
+          },
+          "Fc": {
+            "minimum": 0,
+            "title": "Fc",
+            "type": "number"
+          },
+          "norden": {
+            "default": false,
+            "title": "Norden",
+            "type": "boolean"
+          },
+          "geneigt": {
+            "default": false,
+            "title": "Geneigt",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "area_formula",
+          "g",
+          "Fs",
+          "Fc"
+        ],
+        "title": "SummerWindow",
+        "type": "object"
+      }
+    }
+  }
+}

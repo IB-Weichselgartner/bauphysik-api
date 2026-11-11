@@ -37,6 +37,7 @@ tags:
   - name: Projects
   - name: Calculations
   - name: Exports
+  - name: Materials
 paths:
   /api/projects:
     get:
@@ -65,15 +66,22 @@ paths:
     get:
       tags: [Calculations]
       operationId: listCalculations
-      summary: List the calculation names of a project
+      summary: List the calculations of a project
       description: |
-        Returns the short calculation names, newest first. Use a name from this
-        list with `GET /api/{project_uuid}/{calc_name}`.
+        Returns the calculations of the project, newest first. Use `calc_uuid`
+        with `GET /api/calculations/{calc_uuid}`; it stays the same when a
+        calculation is renamed. `calculation_names` is kept for older clients.
       parameters:
         - $ref: "#/components/parameters/ProjectUuid"
+        - name: module
+          in: query
+          required: false
+          description: Only calculations of this module, for example `datenerfassung`.
+          schema:
+            type: string
       responses:
         "200":
-          description: Calculation names of the project.
+          description: Calculations of the project.
           content:
             application/json:
               schema:
@@ -82,7 +90,11 @@ paths:
                 project_uuid: 3f1c9a52-7d1e-4f0b-9c55-2a8e0d6b4c11
                 calculation_names:
                   - Außenwand Bestand
-                  - Dach Sanierung
+                calculations:
+                  - calc_uuid: 8b0e4c1d-2f5a-4e3b-9a6c-7d8e9f0a1b2c
+                    calc_name: Außenwand Bestand
+                    module_name: uwert_glaser_din4108-3
+                    created_at: "2026-11-10T09:30:00"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -101,7 +113,7 @@ paths:
         `result_data` depends on the calculation module (`module_name`).
 
         Calculation names can be renamed by users. Store `calc_uuid` if you need
-        a stable reference and resolve it again through the name list.
+        a stable reference and use `GET /api/calculations/{calc_uuid}`.
       parameters:
         - $ref: "#/components/parameters/ProjectUuid"
         - name: calc_name
@@ -130,6 +142,305 @@ paths:
                 $ref: "#/components/schemas/Error"
               example:
                 error: Calculation not found in this project
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/calculations/{calc_uuid}:
+    get:
+      tags: [Calculations]
+      operationId: getCalculationByUuid
+      summary: Get one calculation by its stable id
+      description: |
+        Same content as `GET /api/{project_uuid}/{calc_name}`. `project_uuid` is
+        the first accessible project the calculation is linked to, or `null`.
+      parameters:
+        - $ref: "#/components/parameters/CalcUuid"
+      responses:
+        "200":
+          description: The calculation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Calculation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/CalculationNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+    put:
+      tags: [Calculations]
+      operationId: updateCalculation
+      summary: Replace the input of a calculation
+      description: |
+        Validates and calculates the new input and replaces the stored one. The
+        previous state is first saved as a calculation of its own, named
+        `<name> [vorher <date time>]`, in the same projects. `calc_uuid` stays the
+        same. Only for modules from `GET /api/modules`.
+      parameters:
+        - $ref: "#/components/parameters/CalcUuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecuteRequest"
+      responses:
+        "200":
+          description: Calculation updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatedCalculation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/CalculationLimit"
+        "404":
+          $ref: "#/components/responses/CalculationNotFound"
+        "422":
+          $ref: "#/components/responses/InvalidInput"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/calculations/{calc_uuid}/din4108-3:
+    get:
+      tags: [Calculations]
+      operationId: getDin4108_3Layers
+      summary: Get a DIN 4108-3 calculation as a simple layer list
+      description: |
+        For calculations of module `uwert_glaser_din4108-3`: the layer
+        structure in a simplified form (`simple_data`), as used for creating and
+        checking such calculations.
+      parameters:
+        - $ref: "#/components/parameters/CalcUuid"
+      responses:
+        "200":
+          description: The layer structure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Din4108_3Layers"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/CalculationNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/materials:
+    get:
+      tags: [Materials]
+      operationId: searchMaterials
+      summary: Search the material catalog for DIN 4108-3
+      description: |
+        Without `manufacturer` the generic catalog with typical design values.
+        With `manufacturer=1` values from manufacturer data sheets instead.
+        Results are ranked by match; without `q` the catalog is listed.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          example: Holzfaser
+        - name: manufacturer
+          in: query
+          required: false
+          description: "`1` for manufacturer data sheet values."
+          schema:
+            type: string
+            enum: ["0", "1"]
+            default: "0"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        "200":
+          description: Matching materials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaterialList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          description: Catalog not available.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/search:
+    get:
+      tags: [Calculations]
+      operationId: searchCalculations
+      summary: Full-text search over the accessible calculations
+      description: |
+        Searches the input data of calculations of the modules
+        `uwert_glaser_din4108-3`, `uw_din_en_iso_10077-1`, `wb_din10211`,
+        `wb_konzept` and `datenerfassung`, for example for a layer structure that
+        was calculated before. Only calculations the token can access.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          example: Ziegel
+        - name: module
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: project_uuid
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: Matching calculations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResult"
+        "400":
+          description: Missing query or module without search.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ProjectNotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/modules:
+    get:
+      tags: [Calculations]
+      operationId: listApiModules
+      summary: List the modules that can be calculated, created and updated
+      responses:
+        "200":
+          description: Modules with API write access.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/modules/{module_name}/execute:
+    post:
+      tags: [Calculations]
+      operationId: executeModule
+      summary: Calculate without saving
+      description: |
+        Runs the calculation on the server and returns the result. Nothing is
+        stored. The input schema per module is listed under `x-modules` in
+        `schemas/calculation-inputs.json`; for `uwert_glaser_din4108-3` either
+        `input_data` or the simplified `simple_data`. Books the module's compute
+        units into the hourly compute budget.
+      parameters:
+        - $ref: "#/components/parameters/ModuleName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecuteRequest"
+      responses:
+        "200":
+          description: Result of the calculation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecuteResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/ModuleNotAvailable"
+        "422":
+          $ref: "#/components/responses/InvalidInput"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/projects/{project_uuid}/calculations:
+    post:
+      tags: [Calculations]
+      operationId: createCalculation
+      summary: Create a calculation in a project
+      description: |
+        Validates, calculates and stores a new calculation in the project. Never
+        overwrites: if the name exists, the answer is `409` with
+        `existing_calc_uuid`; use `PUT /api/calculations/{calc_uuid}` to change
+        it. The stored name is prefixed with the project name. Counts against the
+        compute budget and the maximum number of calculations per account.
+      parameters:
+        - $ref: "#/components/parameters/ProjectUuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCalculationRequest"
+      responses:
+        "201":
+          description: Calculation created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedCalculation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/CalculationLimit"
+        "404":
+          description: Project not found, no permission, or module not available.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: A calculation with this name already exists.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Error"
+                  - type: object
+                    required: [existing_calc_uuid]
+                    properties:
+                      existing_calc_uuid:
+                        type: string
+        "422":
+          $ref: "#/components/responses/InvalidInput"
         "429":
           $ref: "#/components/responses/RateLimited"
 
@@ -213,7 +524,7 @@ paths:
 
         - one active background export per account,
         - 1500 compute units per account and hour, shared with the synchronous
-          exports,
+          exports and with calculations run in the web interface,
         - at most 1000 compute units per project.
 
         Each calculation costs at least one compute unit.
@@ -343,6 +654,20 @@ components:
       schema:
         type: string
       example: 3f1c9a52-7d1e-4f0b-9c55-2a8e0d6b4c11
+    CalcUuid:
+      name: calc_uuid
+      in: path
+      required: true
+      description: "`calc_uuid` from `listCalculations` or a search result."
+      schema:
+        type: string
+    ModuleName:
+      name: module_name
+      in: path
+      required: true
+      description: Module from `GET /api/modules`, for example `fl_din277`.
+      schema:
+        type: string
     JobId:
       name: job_id
       in: path
@@ -396,6 +721,46 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: Request body missing or not a JSON object.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ModuleNotAvailable:
+      description: Module not available for API calculations.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/Error"
+              - type: object
+                properties:
+                  available_modules:
+                    type: array
+                    items:
+                      type: string
+    InvalidInput:
+      description: |
+        Input does not match the module's schema (`details` with field paths), or
+        the calculation failed. A failed calculation returns a hint instead of the
+        technical error; the web interface shows the error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+    CalculationLimit:
+      description: The account reached the maximum number of calculations (currently 20 000).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    CalculationNotFound:
+      description: Calculation does not exist or the token has no access to it.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     JobNotFound:
       description: Project or export job not found for this account.
       content:
@@ -418,6 +783,225 @@ components:
       properties:
         error:
           type: string
+
+    ValidationError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            required: [loc, msg]
+            properties:
+              loc:
+                type: string
+                description: Field path, for example `layers.1.thickness_m`.
+              msg:
+                type: string
+
+    ModuleList:
+      type: object
+      required: [modules]
+      properties:
+        modules:
+          type: array
+          items:
+            type: object
+            required: [module_name, name]
+            properties:
+              module_name:
+                type: string
+              name:
+                type: string
+
+    ExecuteRequest:
+      type: object
+      description: |
+        `input_data` in the module's schema (`x-modules` in
+        `schemas/calculation-inputs.json`), or for `uwert_glaser_din4108-3`
+        alternatively `simple_data`.
+      properties:
+        input_data:
+          type: object
+        simple_data:
+          $ref: "schemas/calculation-inputs.json#/components/schemas/SimpleDin4108_3"
+
+    ExecuteResult:
+      type: object
+      required: [module_name, result_data]
+      properties:
+        module_name:
+          type: string
+        result_data:
+          description: Module-specific result.
+        simple_data:
+          type: object
+          description: Normalized layer structure, only with `simple_data` input.
+
+    CreateCalculationRequest:
+      oneOf:
+        - type: object
+          title: Create_Input_datenerfassung
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: datenerfassung
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_datenerfassung"
+        - type: object
+          title: Create_Input_fl_din277
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: fl_din277
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_fl_din277"
+        - type: object
+          title: Create_Input_lk_din16798
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: lk_din16798
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_lk_din16798"
+        - type: object
+          title: Create_Input_lk_din1946_6
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: lk_din1946-6
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_lk_din1946_6"
+        - type: object
+          title: Create_Input_pv_simulation
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: pv_simulation
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_pv_simulation"
+        - type: object
+          title: Create_Input_sws_din4108_2
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: sws_din4108-2
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_sws_din4108_2"
+        - type: object
+          title: Create_Input_uw_din_en_iso_10077_1
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: uw_din_en_iso_10077-1
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_uw_din_en_iso_10077_1"
+        - type: object
+          title: Create_Input_uwert_glaser_din4108_3
+          required: [module_name, calc_name, input_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: uwert_glaser_din4108-3
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            input_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/Input_uwert_glaser_din4108_3"
+        - type: object
+          title: Create_SimpleDin4108_3
+          required: [module_name, calc_name, simple_data]
+          additionalProperties: false
+          properties:
+            module_name:
+              const: uwert_glaser_din4108-3
+            calc_name:
+              type: string
+              minLength: 1
+              maxLength: 150
+            simple_data:
+              $ref: "schemas/calculation-inputs.json#/components/schemas/SimpleDin4108_3"
+
+    CreatedCalculation:
+      type: object
+      required: [project_uuid, calc_uuid, calc_name, module_name, link_notes]
+      properties:
+        project_uuid:
+          type: string
+        calc_uuid:
+          type: string
+        calc_name:
+          type: string
+          description: Stored name, prefixed with the project name.
+        module_name:
+          type: string
+        link_notes:
+          type: array
+          items:
+            type: string
+        simple_data:
+          type: object
+        result_data:
+          description: Only with `simple_data` input.
+
+    UpdatedCalculation:
+      type: object
+      required: [calc_uuid, calc_name, module_name, backup_calc_uuid, backup_calc_name, link_notes]
+      properties:
+        calc_uuid:
+          type: string
+        calc_name:
+          type: string
+        module_name:
+          type: string
+        backup_calc_uuid:
+          type: string
+          description: Calculation holding the previous state.
+        backup_calc_name:
+          type: string
+        link_notes:
+          type: array
+          items:
+            type: string
 
     ProjectList:
       type: object
@@ -447,15 +1031,129 @@ components:
           type: string
         calculation_names:
           type: array
+          description: Short names, kept for older clients.
           items:
             type: string
+        calculations:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalculationSummary"
+
+    CalculationSummary:
+      type: object
+      required: [calc_uuid, calc_name, module_name, created_at]
+      properties:
+        calc_uuid:
+          type: string
+        calc_name:
+          type: string
+        module_name:
+          type: string
+        created_at:
+          type: [string, "null"]
+          format: date-time
+
+    Din4108_3Layers:
+      type: object
+      required: [project_uuid, calc_uuid, calc_name, module_name, simple_data]
+      properties:
+        project_uuid:
+          type: [string, "null"]
+        calc_uuid:
+          type: string
+        calc_name:
+          type: string
+        module_name:
+          type: string
+        simple_data:
+          type: object
+          description: Layers, boundary conditions and component category in simplified form.
+
+    MaterialList:
+      type: object
+      required: [query, manufacturer, count, materials]
+      properties:
+        query:
+          type: string
+        manufacturer:
+          type: boolean
+        count:
+          type: integer
+        materials:
+          type: array
+          items:
+            $ref: "#/components/schemas/Material"
+
+    Material:
+      type: object
+      required: [name, lambda, mu1, mu2, density, specific_heat]
+      properties:
+        manufacturer:
+          type: string
+          description: Only with `manufacturer=1`.
+        name:
+          type: string
+        lambda:
+          type: [number, "null"]
+          description: Thermal conductivity in W/(m·K).
+        mu1:
+          type: [number, "null"]
+          description: Water vapour diffusion resistance factor, lower value.
+        mu2:
+          type: [number, "null"]
+          description: Water vapour diffusion resistance factor, upper value.
+        density:
+          type: [number, "null"]
+          description: Density in kg/m³.
+        specific_heat:
+          type: [number, "null"]
+          description: Specific heat capacity in J/(kg·K).
+        match_score:
+          type: integer
+        match_reasons:
+          type: array
+          items:
+            type: string
+
+    SearchResult:
+      type: object
+      required: [query, count, calculations]
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+        calculations:
+          type: array
+          items:
+            type: object
+            required: [calc_uuid, module_name, calc_name]
+            properties:
+              calc_uuid:
+                type: string
+              module_name:
+                type: string
+              calc_name:
+                type: string
+              project_uuid:
+                type: [string, "null"]
+              project_name:
+                type: [string, "null"]
+              created_at:
+                type: [string, "null"]
+                format: date-time
+              matched_terms:
+                type: array
+                items:
+                  type: string
 
     Calculation:
       type: object
       required: [project_uuid, calc_uuid, module_name, calc_name, calc_name_full, created_at, input_data, result_data]
       properties:
         project_uuid:
-          type: string
+          type: [string, "null"]
+          description: First accessible project the calculation is linked to.
         calc_uuid:
           type: string
           description: Stable ID of the calculation. Does not change when the calculation is renamed.

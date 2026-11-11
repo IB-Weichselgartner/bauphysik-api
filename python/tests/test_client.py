@@ -16,6 +16,8 @@ class BauphysikClientTests(unittest.TestCase):
 
         def handler(request):
             nonlocal listings
+            if request.url.path.startswith('/api/calculations/'):  # server before 11.11.2026
+                return httpx.Response(404, json={'error': 'Project not found or no permission'})
             if request.url.path == '/api/project/':
                 listings += 1
                 return httpx.Response(200, json={'project_uuid': 'project',
@@ -32,6 +34,85 @@ class BauphysikClientTests(unittest.TestCase):
         self.assertEqual(list(found), ['stable-id'])
         self.assertEqual(found['stable-id'].calc_name, 'renamed')
         self.assertEqual(listings, 2)
+
+    def test_uuid_lookup_uses_the_stable_endpoint_when_available(self):
+        calls = []
+
+        def handler(request):
+            calls.append(request.url.path)
+            return httpx.Response(200, json={'project_uuid': 'p-1', 'calc_uuid': 'c-1', 'module_name': 'm',
+                'calc_name': 'a', 'calc_name_full': 'm:a', 'created_at': '2026-11-11', 'input_data': {},
+                'result_data': None})
+
+        with BauphysikClient('https://example.test', 'secret', transport=httpx.MockTransport(handler)) as client:
+            found = client.get_calculations_by_uuid('p-1', ['c-1'])
+        self.assertEqual(list(found), ['c-1'])
+        self.assertEqual(calls, ['/api/calculations/c-1'])
+
+    def test_uuid_from_another_project_falls_back_to_the_name_list(self):
+        def handler(request):
+            if request.url.path.startswith('/api/calculations/'):
+                return httpx.Response(200, json={'project_uuid': 'other', 'calc_uuid': 'c-1', 'module_name': 'm',
+                    'calc_name': 'a', 'calc_name_full': 'm:a', 'created_at': '2026-11-11', 'input_data': {},
+                    'result_data': None})
+            return httpx.Response(200, json={'project_uuid': 'p-1', 'calculation_names': []})
+
+        with BauphysikClient('https://example.test', 'secret', transport=httpx.MockTransport(handler)) as client:
+            with self.assertRaises(BauphysikAPIError):
+                client.get_calculations_by_uuid('p-1', ['c-1'])
+
+    def test_search_materials_passes_the_manufacturer_switch(self):
+        calls = []
+
+        def handler(request):
+            calls.append(str(request.url))
+            return httpx.Response(200, json={'query': 'steico', 'manufacturer': True, 'count': 1,
+                'materials': [{'manufacturer': 'STEICO', 'name': 'STEICO base', 'lambda': 0.05}]})
+
+        with BauphysikClient('https://example.test', 'secret', transport=httpx.MockTransport(handler)) as client:
+            generic = client.search_materials('fichte')
+            maker = client.search_materials('steico', manufacturer=True)
+        self.assertEqual(maker[0]['manufacturer'], 'STEICO')
+        self.assertEqual(calls[0], 'https://example.test/api/materials?q=fichte&limit=50')
+        self.assertEqual(calls[1], 'https://example.test/api/materials?q=steico&manufacturer=1&limit=50')
+        self.assertEqual(len(generic), 1)
+
+    def test_list_calculations_filters_by_module(self):
+        calls = []
+
+        def handler(request):
+            calls.append(str(request.url))
+            return httpx.Response(200, json={'project_uuid': 'p-1', 'calculation_names': ['E'],
+                'calculations': [{'calc_uuid': 'c-1', 'calc_name': 'E', 'module_name': 'datenerfassung',
+                                  'created_at': None}]})
+
+        with BauphysikClient('https://example.test', 'secret', transport=httpx.MockTransport(handler)) as client:
+            listing = client.list_calculations('p-1', module='datenerfassung')
+        self.assertEqual(listing.calculations[0]['calc_uuid'], 'c-1')
+        self.assertEqual(calls, ['https://example.test/api/p-1/?module=datenerfassung'])
+
+    def test_create_calculation_reports_an_existing_name(self):
+        calls = []
+
+        def handler(request):
+            calls.append((request.method, request.url.path, json.loads(request.content)))
+            return httpx.Response(409, json={'error': 'exists', 'existing_calc_uuid': 'c-1'})
+
+        with BauphysikClient('https://example.test', 'secret', transport=httpx.MockTransport(handler)) as client:
+            with self.assertRaises(BauphysikAPIError) as raised:
+                client.create_calculation('p-1', 'datenerfassung', 'E', input_data={'baujahr_haus': '1975'})
+        self.assertEqual(raised.exception.status_code, 409)
+        self.assertEqual(raised.exception.response_body['existing_calc_uuid'], 'c-1')
+        self.assertEqual(calls[0][:2], ('POST', '/api/projects/p-1/calculations'))
+        self.assertEqual(calls[0][2], {'module_name': 'datenerfassung', 'calc_name': 'E',
+                                       'input_data': {'baujahr_haus': '1975'}})
+
+    def test_input_body_needs_exactly_one_kind_of_input(self):
+        with BauphysikClient('https://example.test', 'secret', transport=httpx.MockTransport(lambda r: None)) as client:
+            with self.assertRaises(ValueError):
+                client.execute_module('fl_din277')
+            with self.assertRaises(ValueError):
+                client.update_calculation('c-1', input_data={}, simple_data={})
 
     def test_missing_uuid_never_substitutes_matching_name(self):
         def handler(request):

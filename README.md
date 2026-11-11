@@ -4,12 +4,15 @@ Schnittstellenbeschreibung und Python-Client für die API von
 [bauphysik.net](https://bauphysik.net).
 
 Über die API lassen sich die Projekte und Berechnungen eines bauphysik.net-Kontos
-lesen und Projektexporte erstellen, zum Beispiel um Ergebnisse von U-Wert-,
-Feuchteschutz- oder Wärmebrückenberechnungen in eigene Abläufe zu übernehmen.
+lesen, Projektexporte erstellen und für ausgewählte Module Berechnungen rechnen,
+anlegen und ändern, zum Beispiel um Ergebnisse von U-Wert-, Feuchteschutz- oder
+Wärmebrückenberechnungen in eigene Abläufe zu übernehmen. Gerechnet wird immer auf
+dem Server von bauphysik.net.
 
 | Inhalt | Ort |
 |---|---|
 | OpenAPI-Spezifikation | [`openapi.yaml`](openapi.yaml) |
+| Eingabeschemata je Modul | [`schemas/calculation-inputs.json`](schemas/calculation-inputs.json), erzeugt aus den Modellen des Servers |
 | Einstieg mit curl-Beispielen | [`docs/einstieg.md`](docs/einstieg.md) |
 | Python-Client | [`python/`](python/) |
 
@@ -33,6 +36,6 @@ der Spezifikation gerne als Issue.
 
 ## Lizenz
 
-- `openapi.yaml` und `docs/`: MIT, siehe [`LICENSE`](LICENSE). Daraus erzeugte
+- `openapi.yaml`, `schemas/` und `docs/`: MIT, siehe [`LICENSE`](LICENSE). Daraus erzeugte
   Clients können frei verwendet werden.
 - `python/`: LGPL-3.0-only, siehe [`python/LICENSE`](python/LICENSE).

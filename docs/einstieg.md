@@ -115,7 +115,8 @@ Die Werte gelten derzeit und können sich ändern.
 | Anfragen je Konto | 120 pro Minute, 3000 pro Stunde |
 | Fehlgeschlagene Anmeldungen je IP-Adresse | 20 pro Minute, 200 pro Stunde |
 | Synchroner Export | bis 25 Recheneinheiten |
-| Exportbudget je Konto | 1500 Recheneinheiten pro Stunde |
+| Rechenbudget je Konto (Exporte und Rechnen in der Weboberfläche) | 1500 Recheneinheiten pro Stunde |
+| Berechnungen je Konto | höchstens 20 000 |
 | Projektgröße für Exporte | bis 1000 Recheneinheiten |
 | Gleichzeitige Hintergrund-Exporte je Konto | 1 |
 

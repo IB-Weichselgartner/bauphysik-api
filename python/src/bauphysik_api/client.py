@@ -4,7 +4,7 @@ import json
 import time
 from json import JSONDecodeError
 from typing import Any, Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import httpx
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -41,6 +41,8 @@ class APIModel(BaseModel):
 class ProjectCalculationList(APIModel):
     project_uuid: str
     calculation_names: list[str]
+    # Empty on servers before 11.11.2026, which only return names.
+    calculations: list[JsonObject] = []
     raw: JsonObject
 
     @classmethod
@@ -49,7 +51,7 @@ class ProjectCalculationList(APIModel):
 
 
 class Calculation(APIModel):
-    project_uuid: str
+    project_uuid: Optional[str]
     calc_uuid: str
     module_name: str
     calc_name: str
@@ -127,10 +129,73 @@ class BauphysikClient:
             raise TransportError("Invalid API response: 'projects' is not a list.")
         return projects
 
-    def list_calculations(self, project_uuid: str) -> ProjectCalculationList:
-        """Return calculation names linked to a project."""
-        data = self._get_json(f"api/{_path(project_uuid)}/")
+    def list_calculations(self, project_uuid: str, module: Optional[str] = None) -> ProjectCalculationList:
+        """Return the calculations linked to a project, optionally of one module only."""
+        data = self._get_json(f"api/{_path(project_uuid)}/" + _query(module=module))
         return ProjectCalculationList.from_json(data)
+
+    def get_calculation_by_uuid(self, calc_uuid: str) -> Calculation:
+        """Return one calculation by its stable id."""
+        return Calculation.from_json(self._get_json(f"api/calculations/{_path(calc_uuid)}"))
+
+    def get_din4108_3_layers(self, calc_uuid: str) -> JsonObject:
+        """Return a DIN 4108-3 calculation as a simple layer list (``simple_data``)."""
+        return self._get_json(f"api/calculations/{_path(calc_uuid)}/din4108-3")
+
+    def search_materials(self, query: str = "", *, manufacturer: bool = False, limit: int = 50) -> list[JsonObject]:
+        """Search the generic material catalog, or manufacturer data sheet values with ``manufacturer=True``."""
+        data = self._get_json("api/materials" + _query(q=query or None, manufacturer="1" if manufacturer else None, limit=limit))
+        return _list_of(data, "materials")
+
+    def list_api_modules(self) -> list[JsonObject]:
+        """Modules that can be calculated, created and updated through the API."""
+        return _list_of(self._get_json("api/modules"), "modules")
+
+    def execute_module(
+        self,
+        module_name: str,
+        *,
+        input_data: Optional[JsonObject] = None,
+        simple_data: Optional[JsonObject] = None,
+    ) -> JsonObject:
+        """Calculate on the server without saving. ``simple_data`` only for ``uwert_glaser_din4108-3``."""
+        return self._request_json(
+            "POST", f"api/modules/{_path(module_name)}/execute", json=_input_body(input_data, simple_data)
+        )
+
+    def create_calculation(
+        self,
+        project_uuid: str,
+        module_name: str,
+        calc_name: str,
+        *,
+        input_data: Optional[JsonObject] = None,
+        simple_data: Optional[JsonObject] = None,
+    ) -> JsonObject:
+        """Create a calculation in a project. Never overwrites: an existing name raises
+        :class:`BauphysikAPIError` with status 409 and ``existing_calc_uuid`` in ``response_body``."""
+        body = {"module_name": module_name, "calc_name": calc_name, **_input_body(input_data, simple_data)}
+        return self._request_json("POST", f"api/projects/{_path(project_uuid)}/calculations", json=body)
+
+    def update_calculation(
+        self,
+        calc_uuid: str,
+        *,
+        input_data: Optional[JsonObject] = None,
+        simple_data: Optional[JsonObject] = None,
+    ) -> JsonObject:
+        """Replace the input of a calculation. The server keeps the previous state as a
+        calculation of its own (``backup_calc_uuid``)."""
+        return self._request_json(
+            "PUT", f"api/calculations/{_path(calc_uuid)}", json=_input_body(input_data, simple_data)
+        )
+
+    def search_calculations(
+        self, query: str, *, module: Optional[str] = None, project_uuid: Optional[str] = None, limit: int = 10
+    ) -> list[JsonObject]:
+        """Full-text search over the accessible calculations, for example for a layer structure."""
+        data = self._get_json("api/search" + _query(q=query, module=module, project_uuid=project_uuid, limit=limit))
+        return _list_of(data, "calculations")
 
     def get_calculation(self, project_uuid: str, calc_name: str) -> Calculation:
         """Return input and result JSON for one calculation in a project."""
@@ -146,6 +211,15 @@ class BauphysikClient:
         wanted = set(calc_uuids)
         found: dict[str, Calculation] = {}
         if not wanted:
+            return found
+        for calc_uuid in sorted(wanted):
+            try:
+                calculation = self.get_calculation_by_uuid(calc_uuid)
+            except (BauphysikAPIError, TransportError):
+                continue  # older server or not found: resolved through the name list below
+            if calculation.project_uuid == project_uuid and calculation.calc_uuid == calc_uuid:
+                found[calc_uuid] = calculation
+        if set(found) == wanted:
             return found
         for _ in range(2):
             for name in self.list_calculations(project_uuid).calculation_names:
@@ -280,9 +354,9 @@ class BauphysikClient:
     def _get_json(self, path: str) -> JsonObject:
         return self._request_json("GET", path)
 
-    def _request_json(self, method: str, path: str) -> JsonObject:
+    def _request_json(self, method: str, path: str, *, json: Optional[JsonObject] = None) -> JsonObject:
         try:
-            response = self._client.request(method, path.lstrip("/"))
+            response = self._client.request(method, path.lstrip("/"), json=json)
         except httpx.RequestError as exc:
             raise TransportError(f"Could not send bauphysik.net API request: {exc}") from exc
 
@@ -327,6 +401,24 @@ def _path(value: str) -> str:
     if not value:
         raise ValueError("Path values must not be empty.")
     return quote(value, safe="")
+
+
+def _query(**params: Any) -> str:
+    present = {key: value for key, value in params.items() if value not in (None, "")}
+    return "?" + urlencode(present) if present else ""
+
+
+def _input_body(input_data: Optional[JsonObject], simple_data: Optional[JsonObject]) -> JsonObject:
+    if (input_data is None) == (simple_data is None):
+        raise ValueError("Pass exactly one of input_data or simple_data.")
+    return {"input_data": input_data} if input_data is not None else {"simple_data": simple_data}
+
+
+def _list_of(data: JsonObject, key: str) -> list[JsonObject]:
+    items = data.get(key, [])
+    if not isinstance(items, list):
+        raise TransportError(f"Invalid API response: '{key}' is not a list.")
+    return items
 
 
 def _decode_json(response: httpx.Response) -> Any:

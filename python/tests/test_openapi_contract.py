@@ -35,6 +35,24 @@ def _handler(calls):
         path = request.url.path
         if path == "/api/projects":
             return httpx.Response(200, json={"projects": []})
+        if path == "/api/materials":
+            return httpx.Response(200, json={"query": "", "manufacturer": False, "count": 0, "materials": []})
+        if path == "/api/search":
+            return httpx.Response(200, json={"query": "x", "count": 0, "calculations": []})
+        if path.endswith("/din4108-3"):
+            return httpx.Response(200, json={"project_uuid": "p-1", "calc_uuid": "c-1", "calc_name": "a",
+                                             "module_name": "uwert_glaser_din4108-3", "simple_data": {}})
+        if path == "/api/modules":
+            return httpx.Response(200, json={"modules": [{"module_name": "fl_din277", "name": "DIN 277"}]})
+        if request.method == "POST" and path.endswith("/execute"):
+            return httpx.Response(200, json={"module_name": "fl_din277", "result_data": {}})
+        if request.method == "POST" and path.endswith("/calculations"):
+            return httpx.Response(201, json={"project_uuid": "p-1", "calc_uuid": "c-2", "calc_name": "P A",
+                                             "module_name": "fl_din277", "link_notes": []})
+        if request.method == "PUT":
+            return httpx.Response(200, json={"calc_uuid": "c-1", "calc_name": "A", "module_name": "fl_din277",
+                                             "backup_calc_uuid": "c-3", "backup_calc_name": "A [vorher]",
+                                             "link_notes": []})
         if request.method == "POST":
             return httpx.Response(202, json={"id": "job-1", "status": "queued"})
         if path.endswith("/download") or path.endswith("/export-pdf"):
@@ -60,6 +78,16 @@ class OpenAPIContractTests(unittest.TestCase):
         with BauphysikClient("https://example.test", "t", transport=httpx.MockTransport(_handler(calls))) as client:
             client.list_projects()
             client.list_calculations("p-1")
+            client.list_calculations("p-1", module="datenerfassung")
+            client.get_calculation_by_uuid("c-1")
+            client.get_din4108_3_layers("c-1")
+            client.search_materials("holz", manufacturer=True)
+            client.search_calculations("Ziegel", module="datenerfassung", project_uuid="p-1")
+            client.list_api_modules()
+            client.execute_module("fl_din277", input_data={"rooms": []})
+            client.execute_module("uwert_glaser_din4108-3", simple_data={"layers": []})
+            client.create_calculation("p-1", "fl_din277", "A", input_data={"rooms": []})
+            client.update_calculation("c-1", input_data={"rooms": []})
             client.get_calculation("p-1", "a/b")
             client.get_calculations_by_uuid("p-1", ["c-1"])
             client.export_project("p-1")
