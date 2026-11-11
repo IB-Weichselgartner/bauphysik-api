@@ -1,8 +1,10 @@
 # bauphysik-api (Python)
 
-Python-Client für die API von [bauphysik.net](https://bauphysik.net). Der Client
-liest Projekte und Berechnungen eines Kontos und erstellt Projektexporte als JSON
-oder als ZIP mit PDF-Berichten.
+Python-Client und Kommandozeile `bauphysik` für die API von
+[bauphysik.net](https://bauphysik.net). Beide lesen Projekte und Berechnungen
+eines Kontos, erstellen Projektexporte als JSON oder als ZIP mit PDF-Berichten und
+rechnen, legen an oder ändern Berechnungen der freigegebenen Module. Gerechnet wird
+immer auf dem Server, das Paket enthält keinen Rechenkern.
 
 Die vollständige Beschreibung der Schnittstelle steht in
 [`openapi.yaml`](https://github.com/IB-Weichselgartner/bauphysik-api/blob/main/openapi.yaml).
@@ -26,6 +28,41 @@ Konto sind höchstens drei aktive Tokens möglich.
 
 Das Token nicht in den Quelltext schreiben, sondern zum Beispiel über eine
 Umgebungsvariable übergeben.
+
+## Kommandozeile
+
+Nach der Installation steht der Befehl `bauphysik` bereit. Jede Ausgabe ist JSON
+auf stdout, Fehler stehen als JSON auf stderr.
+
+```bash
+export BAUPHYSIK_API_TOKEN="..."          # PowerShell: $env:BAUPHYSIK_API_TOKEN = "..."
+bauphysik projects list
+bauphysik calc list <project_uuid> --module datenerfassung
+bauphysik calc show <calc_uuid>
+bauphysik calc show <calc_uuid> --layers   # DIN 4108-3 als vereinfachter Schichtaufbau
+bauphysik calc search Ziegel --module uwert_glaser_din4108-3
+bauphysik materials search Holzfaser       # generischer Katalog
+bauphysik materials search Holzfaser --hersteller
+bauphysik modules list
+bauphysik schema uwert_glaser_din4108-3 --simple   # Eingabeschema, ohne Netz
+bauphysik calc execute uwert_glaser_din4108-3 --input wand.json --simple
+bauphysik calc create <project_uuid> uwert_glaser_din4108-3 "Außenwand" --input wand.json --simple
+bauphysik calc update <calc_uuid> --input wand.json --simple
+bauphysik export <project_uuid> --out export.zip
+```
+
+- **Token und Server:** `BAUPHYSIK_API_TOKEN` oder `--token-file <datei>`, den
+  Token nie als Argument übergeben. Ein anderer Server über `BAUPHYSIK_BASE_URL`
+  oder `--base-url`, Standard `https://bauphysik.net`.
+- **Eingaben** kommen als JSON-Datei (`--input`, `-` für stdin). Das CLI prüft sie
+  vor dem Senden gegen das Schema des Moduls und nennt die fehlerhaften Felder.
+- **`calc create`** überschreibt nie. Gibt es den Namen schon, endet der Befehl mit
+  Status 409 und `existing_calc_uuid`. Zum Ändern `calc update` verwenden; der
+  bisherige Stand bleibt als eigene Berechnung erhalten.
+- **Ältere Server** ohne einen Befehl erkennt das CLI und meldet „Der Server kennt
+  diesen Befehl noch nicht“.
+- **Rückgabewerte:** 0 erfolgreich, 1 Fehlerantwort der API, 2 ungültiger Aufruf
+  oder ungültige Eingabe, 3 Netzwerk- oder Formatfehler.
 
 ## Beispiel
 

@@ -56,7 +56,7 @@ class Calculation(APIModel):
     module_name: str
     calc_name: str
     calc_name_full: str
-    created_at: str
+    created_at: Optional[str]
     input_data: Any
     result_data: Any
     raw: JsonObject
@@ -360,12 +360,30 @@ class BauphysikClient:
         except httpx.RequestError as exc:
             raise TransportError(f"Could not send bauphysik.net API request: {exc}") from exc
 
+        if response.is_redirect:
+            # Redirects are not followed. An older server redirects unknown /api/<name>
+            # paths to /api/<name>/ (its project route), which is "unknown endpoint".
+            raise BauphysikAPIError(
+                f"bauphysik.net API answered with a redirect (HTTP {response.status_code}).",
+                status_code=response.status_code,
+                response_body=None,
+            )
+        if response.is_error:
+            # An error page without JSON (older server without this endpoint, proxy):
+            # keep the status so callers can tell "unknown endpoint" from a transport problem.
+            try:
+                payload = response.json()
+            except JSONDecodeError:
+                payload = None
+            message = _error_message(payload) or f"bauphysik.net API returned HTTP {response.status_code}."
+            raise BauphysikAPIError(
+                message,
+                status_code=response.status_code,
+                response_body=payload if isinstance(payload, dict) else None,
+            )
         payload = _decode_json(response)
         if not isinstance(payload, dict):
             raise TransportError("Invalid API response: expected a JSON object.")
-        if response.is_error:
-            message = _error_message(payload) or f"bauphysik.net API returned HTTP {response.status_code}."
-            raise BauphysikAPIError(message, status_code=response.status_code, response_body=payload)
         return payload
 
     def _get_bytes(self, path: str) -> bytes:

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: bauphysik.net API
-  version: 0.1.0
+  version: 0.2.0
   summary: Read access to bauphysik.net projects, calculations and exports.
   description: |
     The bauphysik.net API gives read access to the projects and calculations of
@@ -1167,7 +1167,7 @@ components:
           type: string
           description: Full stored name, may carry a module prefix.
         created_at:
-          type: string
+          type: [string, "null"]
           format: date-time
         input_data:
           description: Module-specific input data.

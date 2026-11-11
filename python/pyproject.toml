@@ -29,8 +29,12 @@ classifiers = [
 ]
 dependencies = [
   "httpx>=0.27,<1",
+  "jsonschema>=4.18,<5",
   "pydantic>=2,<3",
 ]
+
+[project.scripts]
+bauphysik = "bauphysik_api.cli:main"
 
 [project.urls]
 Homepage = "https://bauphysik.net"

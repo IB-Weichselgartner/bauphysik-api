@@ -14,7 +14,7 @@ dem Server von bauphysik.net.
 | OpenAPI-Spezifikation | [`openapi.yaml`](openapi.yaml) |
 | Eingabeschemata je Modul | [`schemas/calculation-inputs.json`](schemas/calculation-inputs.json), erzeugt aus den Modellen des Servers |
 | Einstieg mit curl-Beispielen | [`docs/einstieg.md`](docs/einstieg.md) |
-| Python-Client | [`python/`](python/) |
+| Python-Client und Kommandozeile `bauphysik` | [`python/`](python/) |
 
 ## Zugang
 
