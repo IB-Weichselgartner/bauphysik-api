@@ -1,0 +1,9 @@
+{
+  "ziel_u_kategorie": "aussenwand",
+  "layers": [
+    {"name": "Innenputz", "thickness_m": 0.015, "material": "Kalk-Gipsputz"},
+    {"name": "Mauerwerk", "thickness_m": 0.30, "material": "Vollziegel 1.4"},
+    {"name": "Dämmung", "thickness_m": 0.14, "material": "EPS 035"},
+    {"name": "Außenputz", "thickness_m": 0.01, "material": "Kalkzementputz"}
+  ]
+}

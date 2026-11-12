@@ -290,7 +290,19 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _utf8_streams() -> None:
+    """JSON immer als UTF-8 ausgeben. Unter Windows ist stdout bei Umleitung sonst cp1252, und Zeichen wie λ
+    brechen den Aufruf ab, genau dann, wenn ein Skript oder Agent die Ausgabe liest."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (ValueError, OSError):
+                pass
+
+
 def main(argv: Optional[list[str]] = None, *, client: Optional[BauphysikClient] = None) -> int:
+    _utf8_streams()
     args = build_parser().parse_args(argv)
     try:
         if args.func in OFFLINE_COMMANDS:
