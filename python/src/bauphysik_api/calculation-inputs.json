@@ -1,6 +1,9 @@
 {
   "$comment": "Erzeugt aus den Eingabemodellen von bauphysik.net, nicht von Hand ändern.",
   "x-modules": {
+    "co2_rechner": {
+      "input_data": "Input_co2_rechner"
+    },
     "datenerfassung": {
       "input_data": "Input_datenerfassung"
     },
@@ -95,6 +98,155 @@
         "title": "AssemblyLayer",
         "type": "object"
       },
+      "Co2RechnerNeu": {
+        "additionalProperties": false,
+        "properties": {
+          "energietraeger": {
+            "default": "",
+            "description": "Energieträger nach Anlage 9 GEG oder 'Wärmepumpe (Netzstrom)'.",
+            "title": "Energietraeger",
+            "type": "string"
+          },
+          "eta_s": {
+            "default": 1.2,
+            "description": "Nur Wärmepumpe: ηs nach Ökodesign, JAZ = 2,5 × ηs.",
+            "exclusiveMinimum": 0,
+            "title": "Eta S",
+            "type": "number"
+          },
+          "nutzungsgrad": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 1.2,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Jahresnutzungsgrad bezogen auf den Heizwert. Leer: Standardwert nach Energieträger und Heiztechnik.",
+            "title": "Nutzungsgrad"
+          },
+          "emissionsfaktor_individuell": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Emissionsfaktor Individuell"
+          },
+          "paragraph_22_erfuellt": {
+            "default": false,
+            "title": "Paragraph 22 Erfuellt",
+            "type": "boolean"
+          },
+          "anteil": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 100,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Anteil an der ersetzten Nutzwärme in Prozent; alle Anteile ergeben 100. Bei nur einem Wärmeerzeuger optional.",
+            "title": "Anteil"
+          }
+        },
+        "title": "Co2RechnerNeu",
+        "type": "object"
+      },
+      "Co2RechnerRow": {
+        "additionalProperties": false,
+        "properties": {
+          "energietraeger": {
+            "default": "",
+            "description": "Energieträger nach Anlage 9 GEG oder 'Wärmepumpe (Netzstrom)'.",
+            "title": "Energietraeger",
+            "type": "string"
+          },
+          "eta_s": {
+            "default": 1.2,
+            "description": "Nur Wärmepumpe: ηs nach Ökodesign, JAZ = 2,5 × ηs.",
+            "exclusiveMinimum": 0,
+            "title": "Eta S",
+            "type": "number"
+          },
+          "nutzungsgrad": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 1.2,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Jahresnutzungsgrad bezogen auf den Heizwert. Leer: Standardwert nach Energieträger und Heiztechnik.",
+            "title": "Nutzungsgrad"
+          },
+          "emissionsfaktor_individuell": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Emissionsfaktor Individuell"
+          },
+          "paragraph_22_erfuellt": {
+            "default": false,
+            "title": "Paragraph 22 Erfuellt",
+            "type": "boolean"
+          },
+          "verbrauch": {
+            "default": 0,
+            "description": "Jahresverbrauch; bei Wärmepumpe die Nutzwärme in kWh.",
+            "minimum": 0,
+            "title": "Verbrauch",
+            "type": "number"
+          },
+          "einheit": {
+            "default": "kWh",
+            "title": "Einheit",
+            "type": "string"
+          },
+          "heiztechnik": {
+            "default": "Heizwert",
+            "description": "Heizwert- oder Brennwertkessel; bestimmt den Standard-Nutzungsgrad.",
+            "enum": [
+              "Heizwert",
+              "Brennwert"
+            ],
+            "title": "Heiztechnik",
+            "type": "string"
+          },
+          "wird_ersetzt": {
+            "default": true,
+            "description": "False: Energieträger bleibt im Soll-Zustand unverändert.",
+            "title": "Wird Ersetzt",
+            "type": "boolean"
+          }
+        },
+        "title": "Co2RechnerRow",
+        "type": "object"
+      },
       "Din277Room": {
         "additionalProperties": false,
         "properties": {
@@ -170,6 +322,28 @@
           "art"
         ],
         "title": "Din277Room",
+        "type": "object"
+      },
+      "Input_co2_rechner": {
+        "additionalProperties": false,
+        "properties": {
+          "ist": {
+            "items": {
+              "$ref": "#/components/schemas/Co2RechnerRow"
+            },
+            "title": "Ist",
+            "type": "array"
+          },
+          "neu": {
+            "description": "Neue Wärmeerzeuger, zum Beispiel Wärmepumpe 80 % und Gas-Brennwertkessel 20 % bei einer Hybridheizung.",
+            "items": {
+              "$ref": "#/components/schemas/Co2RechnerNeu"
+            },
+            "title": "Neu",
+            "type": "array"
+          }
+        },
+        "title": "Input_co2_rechner",
         "type": "object"
       },
       "Input_datenerfassung": {
